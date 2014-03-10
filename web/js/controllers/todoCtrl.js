@@ -6,11 +6,10 @@
  * - retrieves and persists the model via the todoStorage service
  * - exposes the model to the template and provides event handlers
  */
-todomvc.controller('TodoCtrl', function TodoCtrl($scope, $routeParams, todoStorage, todoVertx, filterFilter) {
-	// this is called twice
-	console.log("TodoCtrl fetching from localStorage");
-	var todos = $scope.todos = todoStorage.get();
-	// fetch from Vert.x
+todomvc.controller('TodoCtrl', function TodoCtrl($scope, $routeParams, todoStorage, todoVertx,filterFilter) {
+	// var todos = $scope.todos = todoStorage.get();
+	// fetch from Vert.x instead
+	var todos = $scope.todos = [];
 
 	$scope.newTodo = '';
 	$scope.editedTodo = null;
@@ -20,11 +19,27 @@ todomvc.controller('TodoCtrl', function TodoCtrl($scope, $routeParams, todoStora
 		$scope.completedCount = todos.length - $scope.remainingCount;
 		$scope.allChecked = !$scope.remainingCount;
 		if (newValue !== oldValue) { // This prevents unneeded calls to the local storage
-  		console.log("TodoCtrl: localStorage");
-			todoStorage.put(todos);
+			/*
+			for (var key in todos) {
+				if (todos.hasOwnProperty(key))  {
+				  console.log("key: " + key + " value: " + todos[key]);
+					for (var key2 in todos[key]) {
+						if(todos[key].hasOwnProperty(key2)) {
+				  		 console.log("key: " + key2 + " value: " + todos[key][key2]);							
+						}
+					} // for
+			  }
+			} // for			
+			*/
+			for(var key in todos) {
+				todoVertx.put(todos[key]);
+   		}
+			// todoStorage.put(todos);
 		}
-	}, true);
-
+	}, 
+	true // object equality
+	);
+  
 	// Monitor the current route for changes and adjust the filter accordingly.
 	$scope.$on('$routeChangeSuccess', function () {
 		var status = $scope.status = $routeParams.status || '';
@@ -35,14 +50,12 @@ todomvc.controller('TodoCtrl', function TodoCtrl($scope, $routeParams, todoStora
 	});
 
 	$scope.addTodo = function () {
+		console.log("addTodo");
 		var newTodo = $scope.newTodo.trim();
 		if (!newTodo.length) {
 			return;
 		}
-		// vert.x
-		todoVertx.add({title: newTodo, completed:false});
-		
-		todos.push({
+		todos.push({ 
 			title: newTodo,
 			completed: false
 		});
@@ -66,8 +79,6 @@ todomvc.controller('TodoCtrl', function TodoCtrl($scope, $routeParams, todoStora
 			$scope.removeTodo(todo);
 			return;
 		}
-		// doneEditing is also called when the user Escapes
-		todoVertx.update(todo);
 	};
 
 	$scope.revertEditing = function (todo) {
@@ -79,7 +90,6 @@ todomvc.controller('TodoCtrl', function TodoCtrl($scope, $routeParams, todoStora
 	$scope.removeTodo = function (todo) {
 		console.log("removeTodo");	
 		todos.splice(todos.indexOf(todo), 1);
-		todoVertx.remove(todo);
 	};
 
 	$scope.clearCompletedTodos = function () {

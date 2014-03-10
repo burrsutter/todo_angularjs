@@ -11,21 +11,24 @@ eventBus.registerHandler("todos.get", function(args, responder) {
         console.log(reply.message);
      }
    }); // Mongo find all
-}); // registerHandler todos.list
+}); // registerHandler todos.get
 
-eventBus.registerHandler("todos.put", function (todos, responder) {
-   console.log("todos.put"); 
-   eventBus.send('todos.persistor', { action:"save", collection: "todos", document: todos}, function(reply) {
-     if (reply.status === "ok") {
-        todo._id = reply._id;
-        console.log("todos.save " + reply._id);
-        responder(todo); // respond with the created/updated item 
-        // alert others
-        console.log("alert: " + reply);
-        eventBus.publish("todo.was.saved",todo);
-     } else {
-        console.log(reply.message);
-     }    
-   }) // Mongo save
-});
+eventBus.registerHandler("todos.put", function(todo, responder) {
+   console.log("todos.put: " + todo);
+
+	 // iterate through all todos
+
+		  var stringyTodo = JSON.stringify(todo)
+			console.log(stringyTodo);
+			
+	   eventBus.send('todos.persistor', { action:"save", collection: "todos", document: todo}, function(reply) {
+	     if (reply.status === "ok") {
+	        todo._id = reply._id;
+	        console.log("save " + reply._id);
+	   			responder(todo); // respond with the created/updated item 
+	     } else {
+	        console.log("error: " + reply.message);
+	     }    
+	   }); // Mongo save
+}); // registerHandler todos.put
 
